@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { LanguageSelector } from '@/components/ui/language-selector';
-import { AuthModal } from '@/components/auth/AuthModal';
+import { AuthModal } from '@/components/Auth/AuthModal';
 import { useAuth } from '@/hooks/useAuth';
 import { Menu, X, Globe, User, LogOut } from 'lucide-react';
 

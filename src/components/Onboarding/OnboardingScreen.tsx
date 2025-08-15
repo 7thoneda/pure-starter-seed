@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Plus, X, Heart, ArrowRight, Sparkles, Star } from "lucide-react";
+import { Camera, Plus, X, Heart, ArrowRight, Sparkles, Star, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ImageCropModal } from "./ImageCropModal";
+import { LanguageSelector } from "@/components/ui/language-selector";
 
 interface UserProfile {
   username: string;
@@ -41,6 +42,7 @@ export function OnboardingScreen({ onComplete, onSkip, initialProfile, isPremium
   const [gender, setGender] = useState<"male" | "female" | "other">(initialProfile?.gender ?? "male");
   const [showCropModal, setShowCropModal] = useState(false);
   const [pendingImageUrl, setPendingImageUrl] = useState<string>("");
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const { toast } = useToast();
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,7 +187,12 @@ export function OnboardingScreen({ onComplete, onSkip, initialProfile, isPremium
       {/* Header */}
       <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-4 flex-shrink-0">
         <div className="flex justify-between items-start mb-6">
-          <div className="flex-1"></div>
+          <button
+            onClick={() => setShowLanguageSelector(true)}
+            className="p-3 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-all duration-300 hover:scale-105"
+          >
+            <Globe className="w-5 h-5" />
+          </button>
           <Button
             onClick={onSkip}
             variant="ghost"
@@ -403,6 +410,11 @@ export function OnboardingScreen({ onComplete, onSkip, initialProfile, isPremium
         onClose={handleCropCancel}
         onCropComplete={handleCropComplete}
         imageUrl={pendingImageUrl}
+      />
+      
+      <LanguageSelector 
+        isOpen={showLanguageSelector}
+        onClose={() => setShowLanguageSelector(false)}
       />
     </div>
   );

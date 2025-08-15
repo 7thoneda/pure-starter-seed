@@ -20,6 +20,7 @@ import { LoginStreakModal } from "@/components/Rewards/LoginStreakModal";
 import { MysteryBoxModal } from "@/components/Rewards/MysteryBoxModal";
 import { BlurredProfilesScreen } from "@/components/Profile/BlurredProfilesScreen";
 import { BottomNav } from "@/components/Layout/BottomNav";
+import { SettingsModal } from "@/components/ui/settings-modal";
 import { useLoginStreak } from "@/hooks/useLoginStreak";
 import { useMysteryBox } from "@/hooks/useMysteryBox";
 import { useBlurredProfiles } from "@/hooks/useBlurredProfiles";
@@ -27,9 +28,16 @@ import { useToast } from "@/hooks/use-toast";
 import { useMatching } from "@/hooks/useMatching";
 import { CoinsScreen } from "@/components/Coins/CoinsScreen";
 import { PremiumScreen } from "@/components/Premium/PremiumScreen";
+import { EarnCoinsScreen } from "@/components/Coins/EarnCoinsScreen";
 import { Video, Gem, Phone, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import heroBackground from "@/assets/hero-bg.jpg";
+import { SocialScreen } from "@/components/Social/SocialScreen";
+import { RoomsScreen } from "@/components/Rooms/RoomsScreen";
+import { GroupCallScreen } from "@/components/Groups/GroupCallScreen";
+import { useRoomInvites } from "@/hooks/useRoomInvites";
+import { ReferralScreen } from "@/components/Referrals/ReferralScreen";
+import { useReferrals } from "@/hooks/useReferrals";
+import heroBackground from "/placeholder.svg";
 
 interface UserProfile {
   username: string;
@@ -49,19 +57,33 @@ const Index = () => {
     if (savedLanguage && savedLanguage !== i18n.language) {
       i18n.changeLanguage(savedLanguage);
     }
+    
+    // Listen for voice navigation event
+    const handleVoiceNavigation = () => {
+      setActiveTab("voice");
+    };
+    
+    window.addEventListener('navigate-to-voice', handleVoiceNavigation);
+    
+    return () => {
+      window.removeEventListener('navigate-to-voice', handleVoiceNavigation);
+    };
   }, [i18n]);
   // ALL HOOKS MUST BE CALLED AT THE TOP - NO CONDITIONAL HOOKS
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [appState, setAppState] = useState<"splash" | "onboarding" | "main" | "spin-wheel" | "auth">("splash");
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [currentScreen, setCurrentScreen] = useState<"home" | "call" | "voice-call" | "post-call" | "chat-detail" | "blurred-profiles" | "premium">("home");
+  const [currentScreen, setCurrentScreen] = useState<"home" | "call" | "voice-call" | "post-call" | "chat-detail" | "blurred-profiles" | "premium" | "earn-coins" | "social" | "room-call" | "referrals">("home");
   const [activeTab, setActiveTab] = useState("home");
   const [showCoinModal, setShowCoinModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [hasUnlimitedCalls, setHasUnlimitedCalls] = useState(false);
   const [unlimitedCallsExpiry, setUnlimitedCallsExpiry] = useState<Date | null>(null);
   const [autoRenewEnabled, setAutoRenewEnabled] = useState(false);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
+  const [activeRoomType, setActiveRoomType] = useState<'video' | 'voice' | 'chat' | null>(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [coinBalance, setCoinBalance] = useState(100);
   const [showStreakModal, setShowStreakModal] = useState(false);
@@ -83,6 +105,13 @@ const Index = () => {
     userId: 'user-' + Date.now(),
     isPremium
   });
+  
+  
+  // Room invites hook
+  useRoomInvites();
+  
+  // Referrals hook
+  const { useReferralCode } = useReferrals();
   
   const { toast } = useToast();
   
@@ -181,6 +210,20 @@ const Index = () => {
     }
   });
 
+  // Listen for room join events from invites
+  useEffect(() => {
+    const handleJoinRoom = (event: any) => {
+      const { roomId } = event.detail;
+      setActiveRoomId(roomId);
+      setActiveRoomType('video'); // Default to video
+      setCurrentScreen('room-call');
+      setActiveTab('rooms');
+    };
+
+    window.addEventListener('joinRoom', handleJoinRoom);
+    return () => window.removeEventListener('joinRoom', handleJoinRoom);
+  }, []);
+
   // Handle coin balance click to navigate to coins tab
   useEffect(() => {
     const handleHashChange = () => {
@@ -198,6 +241,22 @@ const Index = () => {
 
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
+
+  // Check for referral code in URL on app load
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    if (refCode && isAuthenticated) {
+      // Auto-apply referral code if user is authenticated
+      useReferralCode(refCode).then((success) => {
+        if (success) {
+          // Clear URL parameter after successful application
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+        }
+      });
+    }
+  }, [isAuthenticated, useReferralCode]);
 
   // Event handlers
   const handleStartMatch = () => {
@@ -572,6 +631,26 @@ const Index = () => {
             );
           })()}
 
+          
+          {currentScreen === "room-call" && activeRoomId && activeRoomType && (
+            <GroupCallScreen
+              roomId={activeRoomId}
+              roomType={activeRoomType}
+              onLeave={() => {
+                setCurrentScreen("home");
+                setActiveRoomId(null);
+                setActiveRoomType(null);
+                setActiveTab("rooms");
+              }}
+              onBack={() => {
+                setCurrentScreen("home");
+                setActiveRoomId(null);
+                setActiveRoomType(null);
+                setActiveTab("rooms");
+              }}
+            />
+          )}
+          
           {currentScreen === "blurred-profiles" && (
             <BlurredProfilesScreen
               profiles={blurredProfiles}
@@ -595,6 +674,18 @@ const Index = () => {
             />
           )}
 
+          {currentScreen === "earn-coins" && (
+            <EarnCoinsScreen
+              onBack={() => {
+                setCurrentScreen("home");
+                setActiveTab("coins");
+              }}
+            />
+          )}
+
+          {currentScreen === "referrals" && (
+            <ReferralScreen />
+          )}
           {currentScreen === "home" && (
             <>
               {/* Hero Background */}
@@ -624,6 +715,7 @@ const Index = () => {
                     isPremium={isPremium}
                     hasUnlimitedCalls={hasUnlimitedCalls}
                     onRequestUpgrade={() => setShowPremiumModal(true)}
+                    onOpenReferrals={() => setCurrentScreen("referrals")}
                   />
                 )}
                 
@@ -672,10 +764,38 @@ const Index = () => {
                         description: "You can cancel auto-renew anytime in your account settings.",
                       });
                     }}
+                    onOpenEarnCoins={() => setCurrentScreen("earn-coins")}
                   />
                 )}
                 
-                {activeTab === "chat" && (
+                {activeTab === "rooms" && (
+                  <RoomsScreen
+                    onBack={() => setActiveTab("home")}
+                    onJoinRoom={(roomId, roomType) => {
+                      setActiveRoomId(roomId);
+                      setActiveRoomType(roomType);
+                      setCurrentScreen("room-call");
+                    }}
+                  />
+                )}
+                
+                {activeTab === "friends" && (
+                  <SocialScreen
+                    onBack={() => setActiveTab("home")}
+                    onStartChat={(userId) => {
+                      toast({
+                        title: "Chat Started",
+                        description: "Opening chat with your friend",
+                      });
+                      setActiveTab("groups");
+                    }}
+                    onStartVideoCall={(userId) => {
+                      setCurrentScreen("call");
+                    }}
+                  />
+                )}
+                
+                {activeTab === "groups" && (
                   <ChatListScreen
                     chats={chats}
                     onOpenChat={(chatId) => {
@@ -686,11 +806,12 @@ const Index = () => {
                 )}
                 
                 {activeTab === "profile" && userProfile && (
-                  <ProfileScreen 
+                  <ProfileScreen
                     profile={userProfile}
                     onEdit={() => setIsEditingProfile(true)}
-                    onUpdateProfile={(updatedProfile) => setUserProfile({ ...userProfile, ...updatedProfile })}
+                    onUpdateProfile={(updatedProfile) => setUserProfile(updatedProfile)}
                     onViewBlurredProfiles={() => setCurrentScreen("blurred-profiles")}
+                    onOpenSettings={() => setShowSettingsModal(true)}
                   />
                 )}
               </div>
@@ -699,7 +820,6 @@ const Index = () => {
               <BottomNav 
                 activeTab={activeTab} 
                 onTabChange={setActiveTab} 
-                hasNewProfileActivity={blurredProfiles.some(p => !p.isUnlocked)}
               />
             </>
           )}
@@ -735,6 +855,11 @@ const Index = () => {
         }}
         onOpenBox={openMysteryBox}
         reward={currentReward}
+      />
+      
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
       />
     </div>
   );

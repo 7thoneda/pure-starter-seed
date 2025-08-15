@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Crown } from 'lucide-react';
 import { PremiumModal } from './PremiumModal';
-import heroBackground from '@/assets/hero-bg.jpg';
 
 export function Hero() {
   const { t } = useTranslation();
@@ -13,7 +12,7 @@ export function Hero() {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
-        style={{ backgroundImage: `url(${heroBackground})` }}
+        style={{ backgroundImage: `url(/placeholder.svg)` }}
       />
       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/20" />
       

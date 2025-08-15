@@ -369,6 +369,15 @@ export class RealWebRTCService {
     return this.callSessionId;
   }
 
+  // Get connection status
+  getConnectionState(): RTCPeerConnectionState | null {
+    return this.peerConnection?.connectionState || null;
+  }
+
+  // Check if call is active
+  isCallActive(): boolean {
+    return this.callSessionId !== null && this.peerConnection?.connectionState === 'connected';
+  }
   // Event handlers (to be set by components)
   onRemoteStream?: (stream: MediaStream) => void;
   onConnectionEstablished?: () => void;

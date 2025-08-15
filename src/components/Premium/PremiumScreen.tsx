@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useCurrency } from "@/hooks/useCurrency";
 import { 
   Crown, 
   Check, 
@@ -44,6 +45,7 @@ export function PremiumScreen({ onBack, onSubscribe, userInfo }: PremiumScreenPr
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
   const [paymentMode, setPaymentMode] = useState<'live' | 'demo'>('live');
   const { toast } = useToast();
+  const { getFormattedPricing, currencyConfig } = useCurrency();
 
   // Test payment gateway on component mount
   useEffect(() => {
@@ -57,11 +59,42 @@ export function PremiumScreen({ onBack, onSubscribe, userInfo }: PremiumScreenPr
     
     testGateway();
   }, [toast]);
+  
+  const pricing = getFormattedPricing();
+  
   const plans = [
-    { id: "day", duration: t('premium.plans.day'), price: `₹${PREMIUM_PLANS.day.price}`, originalPrice: `₹${PREMIUM_PLANS.day.originalPrice}`, badge: t('premium.badges.mostPopular'), description: t('premium.unlimitedCalls') },
-    { id: "week", duration: t('premium.plans.week'), price: `₹${PREMIUM_PLANS.week.price}`, originalPrice: `₹${PREMIUM_PLANS.week.originalPrice}`, badge: null, description: t('premium.unlimitedCalls') },
-    { id: "month", duration: t('premium.plans.month'), price: `₹${PREMIUM_PLANS.month.price}`, originalPrice: `₹${PREMIUM_PLANS.month.originalPrice}`, badge: t('premium.badges.bestValue'), description: t('premium.unlimitedCalls') },
-    { id: "lifetime", duration: t('premium.plans.lifetime'), price: `₹${PREMIUM_PLANS.lifetime.price}`, originalPrice: `₹${PREMIUM_PLANS.lifetime.originalPrice}`, badge: t('premium.badges.limitedTime'), description: t('premium.allFeaturesFree') },
+    { 
+      id: "day", 
+      duration: t('premium.plans.day'), 
+      price: currencyConfig.code === 'INR' ? '₹19' : '$0.25', 
+      originalPrice: currencyConfig.code === 'INR' ? '₹29' : '$0.35', 
+      badge: t('premium.badges.mostPopular'), 
+      description: t('premium.unlimitedCalls') 
+    },
+    { 
+      id: "week", 
+      duration: t('premium.plans.week'), 
+      price: currencyConfig.code === 'INR' ? '₹99' : '$1.49', 
+      originalPrice: currencyConfig.code === 'INR' ? '₹149' : '$2.49', 
+      badge: null, 
+      description: t('premium.unlimitedCalls') 
+    },
+    { 
+      id: "month", 
+      duration: t('premium.plans.month'), 
+      price: pricing.premium_monthly.formatted, 
+      originalPrice: currencyConfig.code === 'INR' ? '₹699' : '$9.99', 
+      badge: t('premium.badges.bestValue'), 
+      description: t('premium.unlimitedCalls') 
+    },
+    { 
+      id: "lifetime", 
+      duration: t('premium.plans.lifetime'), 
+      price: currencyConfig.code === 'INR' ? '₹2999' : '$39.99', 
+      originalPrice: currencyConfig.code === 'INR' ? '₹4999' : '$59.99', 
+      badge: t('premium.badges.limitedTime'), 
+      description: t('premium.allFeaturesFree') 
+    },
   ];
 
   const handlePremiumPurchase = async (planId: string) => {
@@ -240,7 +273,7 @@ export function PremiumScreen({ onBack, onSubscribe, userInfo }: PremiumScreenPr
               ⚡ {t('premium.paymentComplete')}
             </p>
             <p className="text-white/70 text-sm font-poppins">
-              🔒 {t('premium.securePayments')}
+              🔒 Secure payments • Pricing for {currencyConfig.country}
               {paymentMode === 'demo' && (
                 <span className="block mt-1 text-yellow-300">
                   ⚠️ {t('premium.demoMode')}

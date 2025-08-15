@@ -1,10 +1,18 @@
 import { useState, useEffect } from "react";
 import { useRef } from "react";
+import { BannerAd } from "@/components/Ads/BannerAd";
+import { CallExtensionAd } from "@/components/Ads/CallExtensionAd";
+import { InterstitialTrigger } from "@/components/Ads/InterstitialTrigger";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ReactionButton } from "./ReactionButton";
 import { ReactionEffect } from "./ReactionEffect";
+import { VirtualGiftPanel } from "@/components/VirtualGifts/VirtualGiftPanel";
+import { GiftEffect } from "@/components/VirtualGifts/GiftEffect";
+import { PremiumReactions } from "@/components/Premium/PremiumReactions";
+import { VoiceModulationPanel } from "@/components/VoiceModulation/VoiceModulationPanel";
+import { useVirtualGifts } from "@/hooks/useVirtualGifts";
 import { useToast } from "@/hooks/use-toast";
 import { WebRTCService } from "@/services/webrtcService";
 import { callMatchingService } from "@/services/callMatchingService";
@@ -20,7 +28,9 @@ import {
   ArrowLeft,
   Clock,
   Sparkles,
-  Loader2
+  Loader2,
+  Gift,
+  Settings
 } from "lucide-react";
 
 interface VideoCallScreenProps {
@@ -61,12 +71,18 @@ export function VideoCallScreen({
   const [waitingForPartner, setWaitingForPartner] = useState(false);
   const [activeReactions, setActiveReactions] = useState<Array<{ id: string; reaction: string }>>([]);
   const [showReactions, setShowReactions] = useState(false);
+  const [showGiftPanel, setShowGiftPanel] = useState(false);
+  const [showVoicePanel, setShowVoicePanel] = useState(false);
+  const [activeGiftEffects, setActiveGiftEffects] = useState<Array<{ id: string; emoji: string; animationType: string }>>([]);
   const [webrtcService, setWebrtcService] = useState<WebRTCService | null>(null);
   const [partnerInfo, setPartnerInfo] = useState<{ username: string; gender: string } | null>(null);
+  const [showExtensionAd, setShowExtensionAd] = useState(false);
+  const [extendedTime, setExtendedTime] = useState(0);
   
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+  const { sendGift } = useVirtualGifts();
 
   const reactions = [
     { emoji: "🎆", label: "Fireworks", cost: 3 },
@@ -181,6 +197,12 @@ export function VideoCallScreen({
       interval = setInterval(() => {
         setCallDuration(prev => {
           const newDuration = prev + 1;
+          const totalDuration = newDuration + extendedTime;
+          
+          // Show extension ad every 4 minutes (240 seconds)
+          if (totalDuration > 0 && totalDuration % 240 === 0) {
+            setShowExtensionAd(true);
+          }
           
           // Show continuation dialog at 7 minutes (420 seconds)
           if (newDuration === 420) {
@@ -239,11 +261,6 @@ export function VideoCallScreen({
 
   const handleReaction = (reaction: string, cost: number) => {
     if (coinBalance < cost) {
-      toast({
-        title: "Not enough coins",
-        description: `You need ${cost} coins to send this reaction.`,
-        variant: "destructive"
-      });
       return;
     }
 
@@ -253,12 +270,29 @@ export function VideoCallScreen({
     // Add reaction effect
     const reactionId = Date.now().toString();
     setActiveReactions(prev => [...prev, { id: reactionId, reaction }]);
+  };
+
+  const handleSendGift = async (gift: any) => {
+    if (!partnerInfo?.username) return;
     
-    // Show success toast
-    toast({
-      title: "Reaction sent! ✨",
-      description: `${reaction} sent for ${cost} coins`,
-    });
+    const success = await sendGift(gift, partnerInfo.username);
+    if (success) {
+      onSpendCoins?.(gift.price_coins);
+      
+      // Add gift effect
+      const effectId = Date.now().toString();
+      setActiveGiftEffects(prev => [...prev, { 
+        id: effectId, 
+        emoji: gift.emoji, 
+        animationType: gift.animation_type 
+      }]);
+      
+      setShowGiftPanel(false);
+    }
+  };
+
+  const handleGiftEffectComplete = (effectId: string) => {
+    setActiveGiftEffects(prev => prev.filter(effect => effect.id !== effectId));
   };
 
   const handleReactionComplete = (reactionId: string) => {
@@ -283,7 +317,15 @@ export function VideoCallScreen({
     if (webrtcService) {
       await webrtcService.endCall();
     }
+    // Trigger interstitial ad on call end
+    if ((window as any).triggerCallEndInterstitial) {
+      (window as any).triggerCallEndInterstitial();
+    }
     onEndCall();
+  };
+
+  const handleTimeExtended = (additionalSeconds: number) => {
+    setExtendedTime(prev => prev + additionalSeconds);
   };
 
   const getStatusMessage = () => {
@@ -304,6 +346,9 @@ export function VideoCallScreen({
   return (
     <>
       <div className="fixed inset-0 bg-black z-50 safe-area-top safe-area-bottom">
+        {/* Interstitial Ad Trigger */}
+        <InterstitialTrigger trigger="call_end" frequency={2} />
+        
         {/* Reaction Effects */}
         {activeReactions.map(({ id, reaction }) => (
           <ReactionEffect
@@ -311,6 +356,17 @@ export function VideoCallScreen({
             id={id}
             reaction={reaction}
             onComplete={handleReactionComplete}
+          />
+        ))}
+        
+        {/* Gift Effects */}
+        {activeGiftEffects.map(({ id, emoji, animationType }) => (
+          <GiftEffect
+            key={id}
+            id={id}
+            emoji={emoji}
+            animationType={animationType}
+            onComplete={handleGiftEffectComplete}
           />
         ))}
         
@@ -350,7 +406,7 @@ export function VideoCallScreen({
             )}
           </div>
 
-          {/* Reaction Panel */}
+          {/* Enhanced Reaction & Gift Panel */}
           {connectionStatus === 'connected' && (
             <div className="absolute top-20 sm:top-24 md:top-28 right-3 sm:right-4 md:right-6">
               <div className="flex flex-col items-end gap-2">
@@ -363,19 +419,33 @@ export function VideoCallScreen({
                   <Sparkles className="w-5 h-5" />
                 </Button>
                 
+                <Button
+                  onClick={() => setShowGiftPanel(true)}
+                  variant="outline"
+                  size="icon"
+                  className="w-12 h-12 rounded-full bg-black/50 border-white/30 text-white hover:bg-black/70"
+                >
+                  <Gift className="w-5 h-5" />
+                </Button>
+                
+                {isPremium && (
+                  <Button
+                    onClick={() => setShowVoicePanel(true)}
+                    variant="outline"
+                    size="icon"
+                    className="w-12 h-12 rounded-full bg-black/50 border-premium/30 text-white hover:bg-black/70"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </Button>
+                )}
+                
                 {showReactions && (
-                  <div className="flex flex-col gap-2 animate-slide-up">
-                    {reactions.map((reaction) => (
-                      <ReactionButton
-                        key={reaction.emoji}
-                        emoji={reaction.emoji}
-                        label={reaction.label}
-                        cost={reaction.cost}
-                        coinBalance={coinBalance}
-                        onReact={handleReaction}
-                      />
-                    ))}
-                  </div>
+                  <PremiumReactions
+                    isVisible={showReactions}
+                    onReact={handleReaction}
+                    coinBalance={coinBalance}
+                    isPremium={isPremium}
+                  />
                 )}
               </div>
             </div>
@@ -556,6 +626,34 @@ export function VideoCallScreen({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Banner Ad for Free Users */}
+      <BannerAd position="bottom" size="banner" />
+
+      {/* Call Extension Ad Modal */}
+      <CallExtensionAd
+        currentDuration={callDuration + extendedTime}
+        onTimeExtended={handleTimeExtended}
+        onClose={() => setShowExtensionAd(false)}
+        isVisible={showExtensionAd}
+        extensionAmount={30}
+      />
+
+      {/* Virtual Gift Panel */}
+      <VirtualGiftPanel
+        isOpen={showGiftPanel}
+        onClose={() => setShowGiftPanel(false)}
+        onSendGift={handleSendGift}
+        coinBalance={coinBalance}
+        isPremiumUser={isPremium}
+      />
+
+      {/* Voice Modulation Panel */}
+      <VoiceModulationPanel
+        isOpen={showVoicePanel}
+        onClose={() => setShowVoicePanel(false)}
+        isPremium={isPremium}
+      />
     </>
   );
 }

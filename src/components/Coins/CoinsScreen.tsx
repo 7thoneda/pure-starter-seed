@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Gem, Flame, Gift, Star, Trophy, Zap, Crown, Calendar, Clock, TrendingUp, Phone, RotateCcw } from "lucide-react";
+import { Gem, Flame, Gift, Star, Trophy, Zap, Crown, Calendar, Clock, TrendingUp, Phone, RotateCcw, Plus } from "lucide-react";
 import { Treasure } from "@/components/ui/icons";
 
 interface LoginStreakData {
@@ -21,6 +21,7 @@ interface CoinsScreenProps {
   onOpenStreakModal: () => void;
   onOpenSpinWheel: () => void;
   onManageSubscription?: () => void;
+  onOpenEarnCoins?: () => void;
 }
 
 export function CoinsScreen({ 
@@ -32,7 +33,8 @@ export function CoinsScreen({
   onBuyCoins, 
   onOpenStreakModal, 
   onOpenSpinWheel,
-  onManageSubscription
+  onManageSubscription,
+  onOpenEarnCoins
 }: CoinsScreenProps) {
   const getStreakReward = () => {
     if (streakData.currentStreak >= 30) return { coins: 100, type: "legendary" };
@@ -113,14 +115,26 @@ export function CoinsScreen({
                 <p className="text-white/90 font-poppins text-lg">Available Coins</p>
               </div>
               <div className="p-6">
-                <Button 
-                  onClick={onBuyCoins}
-                  className="w-full h-14 font-poppins font-semibold text-lg rounded-xl"
-                  variant="gradient"
-                >
-                  <Gem className="w-6 h-6 mr-3" />
-                  Buy More Coins
-                </Button>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    onClick={onBuyCoins}
+                    className="h-14 font-poppins font-semibold rounded-xl"
+                    variant="gradient"
+                  >
+                    <Gem className="w-5 h-5 mr-2" />
+                    Buy Coins
+                  </Button>
+                  {onOpenEarnCoins && (
+                    <Button 
+                      onClick={onOpenEarnCoins}
+                      className="h-14 font-poppins font-semibold rounded-xl"
+                      variant="outline"
+                    >
+                      <TrendingUp className="w-5 h-5 mr-2" />
+                      Earn Free
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -301,15 +315,18 @@ export function CoinsScreen({
                   <Badge variant="outline" className="font-poppins">5-100 coins</Badge>
                 </div>
                 
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
+                <div 
+                  className="flex items-center justify-between p-3 bg-blue-50 rounded-xl cursor-pointer hover:bg-blue-100 transition-colors"
+                  onClick={onOpenEarnCoins}
+                >
                   <div className="flex items-center gap-3">
                     <TrendingUp className="w-5 h-5 text-blue-600" />
                     <div>
-                      <p className="font-medium font-poppins text-sm">Watch Ads</p>
-                      <p className="text-xs text-muted-foreground font-poppins">Earn coins by watching ads</p>
+                      <p className="font-medium font-poppins text-sm">Complete Offers</p>
+                      <p className="text-xs text-muted-foreground font-poppins">AdGem surveys, apps & more</p>
                     </div>
                   </div>
-                  <Badge variant="outline" className="font-poppins">50 coins</Badge>
+                  <Badge variant="outline" className="font-poppins">25-500 coins</Badge>
                 </div>
               </div>
             </CardContent>

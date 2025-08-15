@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Phone, Crown, Gem, ArrowLeft, Mic, Users, Zap, Heart, Sparkles, Star, Lock, Timer, Flame } from "lucide-react";
+import { VoiceCallPricing } from "./VoiceCallPricing";
 
 interface VoiceCallScreenProps {
   onStartCall: () => void;
@@ -315,6 +316,12 @@ export function VoiceCallScreen({
             <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-3xl blur-xl opacity-30 -z-10 animate-pulse" />
           )}
         </div>
+
+        {/* Currency-Aware Pricing Display */}
+        <VoiceCallPricing 
+          onPurchaseCoins={onBuyCoins} 
+          hasUnlimitedCalls={hasUnlimitedCalls} 
+        />
 
         {/* Urgency & Social Proof */}
         {!isPremium && !hasUnlimitedCalls && (

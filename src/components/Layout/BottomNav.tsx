@@ -1,4 +1,4 @@
-import { Home, Video, Coins, MessageCircle, User, Phone, Flame, Eye } from "lucide-react";
+import { Home, Video, Coins, MessageCircle, User, Phone, Flame, Eye, TrendingUp, Users, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BottomNavProps {
@@ -6,17 +6,19 @@ interface BottomNavProps {
   onTabChange: (tab: string) => void;
   streakCount?: number;
   hasNewProfileActivity?: boolean;
+  onOpenEarnCoins?: () => void;
 }
 
-const navItems = [
-  { id: "home", icon: Home, label: "Home" },
-  { id: "match", icon: Video, label: "Match" },
-  { id: "voice", icon: Phone, label: "Voice" },
-  { id: "chat", icon: MessageCircle, label: "Chat" },
-  { id: "profile", icon: User, label: "Profile" },
-];
 
-export function BottomNav({ activeTab, onTabChange, streakCount = 0, hasNewProfileActivity = false }: BottomNavProps) {
+export function BottomNav({ activeTab, onTabChange, streakCount = 0, hasNewProfileActivity = false, onOpenEarnCoins }: BottomNavProps) {
+  const navItems = [
+    { id: "home", icon: Home, label: "Home" },
+    { id: "match", icon: Video, label: "Match" },
+    { id: "voice", icon: Phone, label: "Voice" },
+    { id: "rooms", icon: Users, label: "Rooms" },
+    { id: "profile", icon: User, label: "Profile" },
+  ];
+
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-white/20 z-50 shadow-warm">
       <div className="flex items-center justify-around py-2 sm:py-3 px-2 sm:px-4 max-w-lg mx-auto">

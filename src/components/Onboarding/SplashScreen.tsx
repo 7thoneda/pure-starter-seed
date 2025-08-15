@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import splashImage from "@/assets/splash-screen.png";
+import splashImage from "/placeholder.svg";
 
 interface SplashScreenProps {
   onComplete: () => void;

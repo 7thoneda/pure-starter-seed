@@ -7,6 +7,10 @@ import te from './locales/te.json';
 import ta from './locales/ta.json';
 import mr from './locales/mr.json';
 import gu from './locales/gu.json';
+import ur from './locales/ur.json';
+import pa from './locales/pa.json';
+import kn from './locales/kn.json';
+import ml from './locales/ml.json';
 
 const resources = {
   en: { translation: en },
@@ -16,6 +20,10 @@ const resources = {
   ta: { translation: ta },
   mr: { translation: mr },
   gu: { translation: gu },
+  ur: { translation: ur },
+  pa: { translation: pa },
+  kn: { translation: kn },
+  ml: { translation: ml },
 };
 
 i18n

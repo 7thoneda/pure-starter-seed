@@ -11,6 +11,8 @@ interface UserProfile {
   photos: string[];
   bio: string;
   interests: string[];
+  matchPreference: "anyone" | "men" | "women";
+  gender: "male" | "female" | "other";
   age?: number;
 }
 
@@ -20,9 +22,10 @@ interface ProfileScreenProps {
   onUpdateProfile?: (updatedProfile: UserProfile) => void;
   onBack?: () => void;
   onViewBlurredProfiles?: () => void;
+  onOpenSettings?: () => void;
 }
 
-export function ProfileScreen({ profile, onEdit, onUpdateProfile, onBack, onViewBlurredProfiles }: ProfileScreenProps) {
+export function ProfileScreen({ profile, onEdit, onUpdateProfile, onBack, onViewBlurredProfiles, onOpenSettings }: ProfileScreenProps) {
   const { username, photos, bio, interests, age = 20 } = profile;
   const [showCropModal, setShowCropModal] = useState(false);
   const [pendingImageUrl, setPendingImageUrl] = useState<string>("");
@@ -120,41 +123,42 @@ export function ProfileScreen({ profile, onEdit, onUpdateProfile, onBack, onView
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 safe-area-top safe-area-bottom">
-      {/* Modern Floating Header */}
-      <div className="fixed top-0 left-0 right-0 z-30 bg-black/20 backdrop-blur-xl px-6 py-4 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/5">
+      {/* Sophisticated Floating Header */}
+      <div className="fixed top-0 left-0 right-0 z-30 bg-background/80 backdrop-blur-xl px-4 py-3 pt-14 border-b border-border/20">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
           {onBack && (
             <Button 
               onClick={onBack}
               variant="ghost"
               size="icon"
-              className="rounded-full bg-black/30 hover:bg-black/50 shadow-lg border border-white/20 backdrop-blur-sm text-white hover:text-white"
+              className="rounded-full bg-card/80 hover:bg-card shadow-elegant border border-border/30 backdrop-blur-sm text-foreground hover:text-foreground hover-scale"
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
           )}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button
               onClick={onEdit}
               variant="ghost"
               size="icon"
-              className="rounded-full bg-black/30 hover:bg-black/50 shadow-lg border border-white/20 backdrop-blur-sm text-white hover:text-white"
+              className="rounded-full bg-card/80 hover:bg-card shadow-elegant border border-border/30 backdrop-blur-sm text-foreground hover:text-foreground hover-scale"
             >
-              <Edit className="w-5 h-5" />
+              <Edit className="w-4 h-4" />
             </Button>
             <Button
+              onClick={onOpenSettings}
               variant="ghost"
               size="icon"
-              className="rounded-full bg-black/30 hover:bg-black/50 shadow-lg border border-white/20 backdrop-blur-sm text-white hover:text-white"
+              className="rounded-full bg-card/80 hover:bg-card shadow-elegant border border-border/30 backdrop-blur-sm text-foreground hover:text-foreground hover-scale"
             >
-              <Settings className="w-5 h-5" />
+              <Settings className="w-4 h-4" />
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Tinder-style Full Screen Photo Gallery */}
+      {/* Elegant Full Screen Photo Gallery */}
       <div className="relative h-screen">
         <div 
           ref={scrollRef}
@@ -166,35 +170,35 @@ export function ProfileScreen({ profile, onEdit, onUpdateProfile, onBack, onView
         >
           {photos.map((photo, index) => (
             <div key={index} className="w-full flex-shrink-0 snap-start relative h-full">
-              <div className="h-full bg-black relative overflow-hidden">
+              <div className="h-full bg-card relative overflow-hidden">
                 <img 
                   src={photo} 
                   alt={`${username} photo ${index + 1}`}
                   className="w-full h-full object-cover"
                 />
                 
-                {/* Tinder-style gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
+                {/* Sophisticated gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-background/20" />
                 
                 {/* Profile info overlay on first photo */}
                 {index === 0 && (
-                  <div className="absolute bottom-20 left-6 right-6 text-white">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
-                      <span className="text-sm font-medium opacity-90">Recently Active</span>
+                  <div className="absolute bottom-20 left-6 right-6 text-foreground">
+                    <div className="flex items-center gap-3 mb-6 animate-fade-in">
+                      <div className="w-3 h-3 bg-accent rounded-full animate-pulse shadow-glow"></div>
+                      <span className="text-sm font-medium text-muted-foreground">Recently Active</span>
                     </div>
-                    <h1 className="text-5xl font-bold mb-2 font-poppins">
+                    <h1 className="text-4xl font-bold mb-2 text-foreground animate-fade-in">
                       {username}
                     </h1>
-                    <p className="text-2xl font-light mb-4 opacity-90">{age}</p>
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
-                        <MapPin className="w-4 h-4" />
-                        <span>2 km away</span>
+                    <p className="text-xl font-light mb-6 text-muted-foreground animate-fade-in">{age}</p>
+                    <div className="flex items-center gap-3 text-sm animate-fade-in">
+                      <div className="flex items-center gap-2 bg-card/80 backdrop-blur-sm px-4 py-2 rounded-full border border-border/20 shadow-elegant">
+                        <MapPin className="w-4 h-4 text-primary" />
+                        <span className="text-foreground font-medium">2 km away</span>
                       </div>
-                      <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
-                        <Star className="w-4 h-4 fill-current text-yellow-400" />
-                        <span>4.8</span>
+                      <div className="flex items-center gap-2 bg-card/80 backdrop-blur-sm px-4 py-2 rounded-full border border-border/20 shadow-elegant">
+                        <Star className="w-4 h-4 fill-current text-accent" />
+                        <span className="text-foreground font-medium">4.8</span>
                       </div>
                     </div>
                   </div>
@@ -203,16 +207,16 @@ export function ProfileScreen({ profile, onEdit, onUpdateProfile, onBack, onView
             </div>
           ))}
           
-          {/* Add Photo Card */}
+          {/* Elegant Add Photo Card */}
           {photos.length < 6 && (
             <div className="w-full flex-shrink-0 snap-start h-full">
-              <label className="h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border-2 border-dashed border-white/30 cursor-pointer hover:border-white/50 transition-all duration-300 hover:bg-primary/10 group">
-                <div className="text-center text-white">
-                  <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <Camera className="w-12 h-12" />
+              <label className="h-full bg-gradient-subtle flex items-center justify-center border-2 border-dashed border-border/50 cursor-pointer hover:border-primary/50 transition-all duration-300 group">
+                <div className="text-center text-foreground">
+                  <div className="w-24 h-24 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-elegant border border-border/20">
+                    <Camera className="w-10 h-10 text-primary" />
                   </div>
-                  <p className="text-xl font-semibold font-poppins mb-2">Add Photo</p>
-                  <p className="text-sm opacity-80 font-poppins">Show more of yourself</p>
+                  <p className="text-xl font-semibold mb-2">Add Photo</p>
+                  <p className="text-sm text-muted-foreground">Show more of yourself</p>
                 </div>
                 <input
                   type="file"
@@ -225,7 +229,7 @@ export function ProfileScreen({ profile, onEdit, onUpdateProfile, onBack, onView
           )}
         </div>
         
-        {/* Tinder-style Photo Indicators */}
+        {/* Elegant Photo Indicators */}
         {photos.length > 1 && (
           <div className="absolute top-20 left-0 right-0 flex justify-center space-x-2 px-6">
             {photos.map((_, index) => (
@@ -234,56 +238,57 @@ export function ProfileScreen({ profile, onEdit, onUpdateProfile, onBack, onView
                 onClick={() => handlePhotoIndicatorClick(index)}
                 className={`h-1 flex-1 max-w-16 rounded-full transition-all duration-300 ${
                   index === currentPhotoIndex 
-                    ? 'bg-white shadow-lg' 
-                    : 'bg-white/40 hover:bg-white/60'
+                    ? 'bg-primary shadow-glow' 
+                    : 'bg-muted-foreground/40 hover:bg-muted-foreground/60'
                 }`}
               />
             ))}
           </div>
         )}
 
-        {/* Tinder-style Action Buttons */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-6">
+        {/* Sophisticated Action Buttons */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-4">
           <Button
             size="icon"
-            className="w-16 h-16 rounded-full bg-white/90 hover:bg-white text-gray-600 hover:text-gray-800 shadow-2xl hover:scale-110 transition-all duration-300"
+            className="w-14 h-14 rounded-full bg-card/90 hover:bg-card text-foreground shadow-elegant hover-scale border border-border/20"
           >
-            <MessageCircle className="w-8 h-8" />
+            <MessageCircle className="w-6 h-6" />
           </Button>
           <Button
             size="icon"
-            className="w-20 h-20 rounded-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white shadow-2xl hover:scale-110 transition-all duration-300"
+            className="w-16 h-16 rounded-full bg-gradient-primary text-white shadow-2xl hover-scale"
           >
-            <Heart className="w-10 h-10 fill-current" />
+            <Heart className="w-8 h-8 fill-current" />
           </Button>
           <Button
             size="icon"
-            className="w-16 h-16 rounded-full bg-white/90 hover:bg-white text-gray-600 hover:text-gray-800 shadow-2xl hover:scale-110 transition-all duration-300"
+            className="w-14 h-14 rounded-full bg-card/90 hover:bg-card text-foreground shadow-elegant hover-scale border border-border/20"
           >
-            <Gift className="w-8 h-8" />
+            <Gift className="w-6 h-6" />
           </Button>
         </div>
       </div>
 
-      <div className="px-6 pb-32 space-y-6 max-w-4xl mx-auto bg-white rounded-t-3xl -mt-8 relative z-10 pt-8">
+      <div className="px-4 pb-32 space-y-6 max-w-4xl mx-auto bg-card/95 backdrop-blur-lg rounded-t-3xl -mt-8 relative z-10 pt-8 border-t border-border/20">
 
-        {/* Secret Admirers - Tinder-style */}
+        {/* Sophisticated Admirers Card */}
         {onViewBlurredProfiles && (
-          <Card className="bg-gradient-to-r from-pink-50 to-red-50 border border-pink-200 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 group">
+          <Card className="bg-gradient-subtle border border-border/30 rounded-2xl shadow-elegant hover:shadow-2xl transition-all duration-300 group overflow-hidden">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className="w-14 h-14 bg-gradient-to-r from-pink-500 to-red-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-14 h-14 bg-gradient-primary rounded-full flex items-center justify-center shadow-glow group-hover:scale-110 transition-transform duration-300">
                     <Heart className="w-7 h-7 text-white fill-current" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold font-poppins text-gray-800">3 Likes</h3>
-                    <p className="text-sm text-gray-600 font-poppins">See who likes you</p>
+                    <h3 className="text-xl font-bold text-foreground">3 Likes</h3>
+                    <p className="text-sm text-muted-foreground">See who likes you</p>
                   </div>
                 </div>
                 <Button 
                   onClick={onViewBlurredProfiles}
-                  className="bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white font-poppins rounded-full px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                  variant="gradient"
+                  className="rounded-full px-6 py-2 shadow-glow hover-scale"
                 >
                   See Likes
                 </Button>
@@ -292,23 +297,30 @@ export function ProfileScreen({ profile, onEdit, onUpdateProfile, onBack, onView
           </Card>
         )}
 
-        {/* About Me - Tinder-style minimal */}
-        <Card className="bg-white border-0 rounded-2xl shadow-sm">
+        {/* Elegant About Section */}
+        <Card className="bg-card/80 backdrop-blur-sm border border-border/30 rounded-2xl shadow-elegant">
           <CardContent className="p-6">
-            <h3 className="text-2xl font-bold font-poppins text-gray-800 mb-4">About {username}</h3>
-            <p className="text-gray-700 leading-relaxed font-poppins text-lg">{bio}</p>
+            <h3 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-primary" />
+              About {username}
+            </h3>
+            <p className="text-foreground/90 leading-relaxed text-base">{bio}</p>
           </CardContent>
         </Card>
 
-        {/* Interests - Tinder-style clean layout */}
-        <Card className="bg-white border-0 rounded-2xl shadow-sm">
+        {/* Sophisticated Interests */}
+        <Card className="bg-card/80 backdrop-blur-sm border border-border/30 rounded-2xl shadow-elegant">
           <CardContent className="p-6">
-            <h3 className="text-2xl font-bold font-poppins text-gray-800 mb-4">Interests</h3>
-            <div className="flex flex-wrap gap-3">
+            <h3 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
+              <Zap className="w-6 h-6 text-primary" />
+              Interests
+            </h3>
+            <div className="flex flex-wrap gap-2">
               {interests.map((interest, index) => (
                 <Badge 
                   key={index}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-800 border-0 font-poppins px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105"
+                  variant="secondary"
+                  className="hover:bg-primary/20 hover:text-primary border border-border/30 px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 hover-scale"
                 >
                   {interest}
                 </Badge>
@@ -317,25 +329,25 @@ export function ProfileScreen({ profile, onEdit, onUpdateProfile, onBack, onView
           </CardContent>
         </Card>
 
-        {/* Basic Info - Tinder-style simple cards */}
+        {/* Modern Info Grid */}
         <div className="grid grid-cols-2 gap-4">
-          <Card className="bg-white border-0 rounded-2xl shadow-sm">
-            <CardContent className="p-4 text-center">
-              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                <MapPin className="w-5 h-5 text-white" />
+          <Card className="bg-card/80 backdrop-blur-sm border border-border/30 rounded-2xl shadow-elegant hover-scale">
+            <CardContent className="p-5 text-center">
+              <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-3 shadow-glow">
+                <MapPin className="w-6 h-6 text-white" />
               </div>
-              <p className="text-lg font-bold font-poppins text-gray-800">2 km</p>
-              <p className="text-sm text-gray-600 font-poppins">Distance</p>
+              <p className="text-lg font-bold text-foreground">2 km</p>
+              <p className="text-sm text-muted-foreground">Distance</p>
             </CardContent>
           </Card>
           
-          <Card className="bg-white border-0 rounded-2xl shadow-sm">
-            <CardContent className="p-4 text-center">
-              <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                <Star className="w-5 h-5 text-white fill-current" />
+          <Card className="bg-card/80 backdrop-blur-sm border border-border/30 rounded-2xl shadow-elegant hover-scale">
+            <CardContent className="p-5 text-center">
+              <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-3 shadow-glow">
+                <Star className="w-6 h-6 text-white fill-current" />
               </div>
-              <p className="text-lg font-bold font-poppins text-gray-800">4.8</p>
-              <p className="text-sm text-gray-600 font-poppins">Rating</p>
+              <p className="text-lg font-bold text-foreground">4.8</p>
+              <p className="text-sm text-muted-foreground">Rating</p>
             </CardContent>
           </Card>
         </div>
