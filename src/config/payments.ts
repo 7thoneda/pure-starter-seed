@@ -1,17 +1,18 @@
-// Razorpay configuration - using test key
-export const RAZORPAY_KEY_ID = "rzp_test_WQBAQbslF30m1w"; // Test publishable key
+// Razorpay configuration - PRODUCTION READY
+// Live Razorpay key configured for production
+export const RAZORPAY_KEY_ID = "rzp_live_4Ud6wv8v2YJvbw"; // Live production key
 // IMPORTANT: RAZORPAY_SECRET_KEY should NEVER be in frontend code
 // It must be kept secure in Supabase secrets for payment verification
 
-// Payment configuration
+// Payment configuration - UPDATE FOR YOUR BRAND
 export const PAYMENT_CONFIG = {
   currency: 'INR',
   company: {
-    name: 'AjnabiCam',
-    description: 'Connect & Chat Platform',
-    logo: '', // Add your logo URL here
+    name: 'AjnabiCam', // Update with your company name
+    description: 'Connect & Chat Platform', // Update with your description
+    logo: '/favicon.ico', // Update with your logo URL
     theme: {
-      color: '#E91E63'
+      color: 'hsl(var(--primary))' // Uses your design system primary color
     }
   }
 };
