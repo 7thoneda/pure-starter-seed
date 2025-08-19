@@ -124,7 +124,7 @@ export const useRealWebRTC = ({ userId }: UseRealWebRTCProps) => {
   const endCall = useCallback(async (reason?: string): Promise<void> => {
     try {
       if (webrtcServiceRef.current) {
-        await webrtcServiceRef.current.endCall(reason);
+        await webrtcServiceRef.current.endCall();
       }
       handleEndCall();
     } catch (error: any) {
@@ -156,30 +156,32 @@ export const useRealWebRTC = ({ userId }: UseRealWebRTCProps) => {
   }, []);
 
   // Toggle audio
-  const toggleAudio = useCallback((): boolean => {
+  const toggleAudio = useCallback(async (): Promise<boolean> => {
     if (webrtcServiceRef.current) {
-      const enabled = webrtcServiceRef.current.toggleAudio();
-      setIsAudioEnabled(enabled);
-      return enabled;
+      await webrtcServiceRef.current.toggleAudio();
+      const newState = !isAudioEnabled;
+      setIsAudioEnabled(newState);
+      return newState;
     }
     return false;
-  }, []);
+  }, [isAudioEnabled]);
 
   // Toggle video
-  const toggleVideo = useCallback((): boolean => {
+  const toggleVideo = useCallback(async (): Promise<boolean> => {
     if (webrtcServiceRef.current) {
-      const enabled = webrtcServiceRef.current.toggleVideo();
-      setIsVideoEnabled(enabled);
-      return enabled;
+      await webrtcServiceRef.current.toggleVideo();
+      const newState = !isVideoEnabled;
+      setIsVideoEnabled(newState);
+      return newState;
     }
     return false;
-  }, []);
+  }, [isVideoEnabled]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (webrtcServiceRef.current) {
-        webrtcServiceRef.current.endCall('Component unmounted');
+        webrtcServiceRef.current.endCall();
       }
     };
   }, []);
