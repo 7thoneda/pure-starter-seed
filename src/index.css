@@ -293,14 +293,18 @@ All colors MUST be HSL.
     animation: twinkle 2s ease-in-out forwards;
   }
 
+  /* Modern UI design tokens */
+  --glass-bg: hsla(0, 0%, 100%, 0.1);
+  --glass-border: hsla(0, 0%, 100%, 0.2);
+  --soft-shadow: 0 8px 32px hsla(340, 75%, 55%, 0.12);
+  --elevation-1: 0 2px 8px hsla(340, 20%, 60%, 0.08);
+  --elevation-2: 0 4px 16px hsla(340, 20%, 60%, 0.12);
+  --elevation-3: 0 8px 24px hsla(340, 20%, 60%, 0.16);
+
   /* Additional animations for the new design */
   @keyframes gentle-bounce {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-3px); }
-  }
-
-  .animate-gentle-bounce {
-    animation: gentle-bounce 2s ease-in-out infinite;
   }
 
   @keyframes soft-glow {
@@ -308,8 +312,48 @@ All colors MUST be HSL.
     50% { box-shadow: 0 0 30px rgba(168, 85, 247, 0.6); }
   }
 
+  @keyframes slide-in-up {
+    0% { 
+      opacity: 0; 
+      transform: translateY(20px); 
+    }
+    100% { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+  }
+
+  @keyframes button-press {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes glass-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .animate-gentle-bounce {
+    animation: gentle-bounce 2s ease-in-out infinite;
+  }
+
   .animate-soft-glow {
     animation: soft-glow 3s ease-in-out infinite;
+  }
+
+  .animate-slide-in-up {
+    animation: slide-in-up 0.5s ease-out;
+  }
+
+  .animate-button-press {
+    animation: button-press 0.15s ease-out;
+  }
+
+  .glass-effect {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
   }
 
   /* Enhanced animations for profile unlocks */
