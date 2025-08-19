@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { RealWebRTCService } from '@/services/realWebRTCService';
 import { useToast } from '@/components/ui/use-toast';
+import { ErrorUtils } from '@/utils/errorUtils';
 
 export interface UseRealWebRTCProps {
   userId: string;
@@ -26,7 +27,6 @@ export const useRealWebRTC = ({ userId }: UseRealWebRTCProps) => {
       
       // Set up event handlers
       webrtcServiceRef.current.onRemoteStream = (stream: MediaStream) => {
-        console.log('Received remote stream');
         setRemoteStream(stream);
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = stream;
@@ -34,7 +34,6 @@ export const useRealWebRTC = ({ userId }: UseRealWebRTCProps) => {
       };
       
       webrtcServiceRef.current.onConnectionEstablished = () => {
-        console.log('WebRTC connection established');
         setIsConnected(true);
         toast({
           title: "Connected",
@@ -43,12 +42,11 @@ export const useRealWebRTC = ({ userId }: UseRealWebRTCProps) => {
       };
       
       webrtcServiceRef.current.onCallEnded = () => {
-        console.log('Call ended by remote peer');
         handleEndCall();
       };
       
       webrtcServiceRef.current.onError = (error: string) => {
-        console.error('WebRTC error:', error);
+        console.error('❌ WebRTC error:', error);
         toast({
           title: "Connection Error",
           description: error,
@@ -82,13 +80,13 @@ export const useRealWebRTC = ({ userId }: UseRealWebRTCProps) => {
       
       return callId;
     } catch (error: any) {
-      console.error('Error starting call:', error);
+      const userMessage = ErrorUtils.handleError(error, 'starting call');
       toast({
         title: "Failed to Start Call",
-        description: error.message,
+        description: userMessage,
         variant: "destructive",
       });
-      throw error;
+      throw new Error(userMessage);
     }
   }, [initializeService, toast]);
 
@@ -112,13 +110,13 @@ export const useRealWebRTC = ({ userId }: UseRealWebRTCProps) => {
         description: "Connecting to call...",
       });
     } catch (error: any) {
-      console.error('Error joining call:', error);
+      const userMessage = ErrorUtils.handleError(error, 'joining call');
       toast({
         title: "Failed to Join Call",
-        description: error.message,
+        description: userMessage,
         variant: "destructive",
       });
-      throw error;
+      throw new Error(userMessage);
     }
   }, [initializeService, toast]);
 

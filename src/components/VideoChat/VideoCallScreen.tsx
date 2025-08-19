@@ -14,8 +14,8 @@ import { PremiumReactions } from "@/components/Premium/PremiumReactions";
 import { VoiceModulationPanel } from "@/components/VoiceModulation/VoiceModulationPanel";
 import { useVirtualGifts } from "@/hooks/useVirtualGifts";
 import { useToast } from "@/hooks/use-toast";
-import { WebRTCService } from "@/services/webrtcService";
-import { callMatchingService } from "@/services/callMatchingService";
+import { useRealWebRTC } from "@/hooks/useRealWebRTC";
+import { realMatchingService } from "@/services/realMatchingService";
 import { 
   PhoneOff, 
   Mic, 
@@ -48,6 +48,7 @@ interface VideoCallScreenProps {
     userId?: string;
   };
   isPremium?: boolean;
+  realMatchingHook?: any;
 }
 
 export function VideoCallScreen({ 
@@ -59,7 +60,8 @@ export function VideoCallScreen({
   coinBalance = 100,
   onSpendCoins,
   userProfile,
-  isPremium = false
+  isPremium = false,
+  realMatchingHook
 }: VideoCallScreenProps) {
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
@@ -74,15 +76,30 @@ export function VideoCallScreen({
   const [showGiftPanel, setShowGiftPanel] = useState(false);
   const [showVoicePanel, setShowVoicePanel] = useState(false);
   const [activeGiftEffects, setActiveGiftEffects] = useState<Array<{ id: string; emoji: string; animationType: string }>>([]);
-  const [webrtcService, setWebrtcService] = useState<WebRTCService | null>(null);
   const [partnerInfo, setPartnerInfo] = useState<{ username: string; gender: string } | null>(null);
   const [showExtensionAd, setShowExtensionAd] = useState(false);
   const [extendedTime, setExtendedTime] = useState(0);
   
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const { sendGift } = useVirtualGifts();
+  
+  // Use the real matching hook passed from parent if available
+  const webrtcData = realMatchingHook || useRealWebRTC({
+    userId: userProfile?.userId || `anonymous-${Date.now()}`
+  });
+  
+  const {
+    isInCall,
+    isConnected,
+    isAudioEnabled,
+    isVideoEnabled,
+    localVideoRef,
+    remoteVideoRef,
+    endCall,
+    toggleAudio,
+    toggleVideo,
+    isSearching
+  } = webrtcData;
 
   const reactions = [
     { emoji: "🎆", label: "Fireworks", cost: 3 },
@@ -93,102 +110,29 @@ export function VideoCallScreen({
     { emoji: "🔥", label: "Fire", cost: 2 },
   ];
   
-  // Initialize WebRTC service and start matching
+  // Update connection status based on matching state
   useEffect(() => {
-    if (!userProfile) return;
-
-    const initializeCall = async () => {
-      try {
+    if (realMatchingHook) {
+      if (isSearching) {
         setConnectionStatus('searching');
-        
-        // Create WebRTC service instance using authenticated user ID
-        const userId = userProfile?.userId || `anonymous-${Date.now()}`;
-        const service = new WebRTCService(userId);
-        setWebrtcService(service);
-
-        // Set up event handlers
-        service.onRemoteStream = (stream: MediaStream) => {
-          console.log('Remote stream received:', stream);
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = stream;
-          }
-        };
-
-        service.onConnectionEstablished = () => {
-          console.log('WebRTC connection established');
-          setConnectionStatus('connected');
-          toast({
-            title: "Connected! 🎉",
-            description: "You're now connected with your match.",
-          });
-        };
-
-        service.onCallEnded = () => {
-          console.log('Call ended by remote peer');
-          onEndCall();
-        };
-
-        service.onError = (error: string) => {
-          console.error('WebRTC error:', error);
-          setConnectionStatus('failed');
-          toast({
-            title: "Connection Error",
-            description: error,
-            variant: "destructive"
-          });
-        };
-
-        // Start call matching
-        const matchingRequestId = await callMatchingService.startMatching(
-          userProfile.username,
-          userProfile.gender,
-          userProfile.matchPreference,
-          isPremium,
-          'video'
-        );
-
-        // Set up matching event handlers
-        callMatchingService.onMatchFound = async (callId: string, partnerId: string) => {
-          try {
-            console.log('Match found, joining call:', callId);
-            setConnectionStatus('connecting');
-            setPartnerInfo({ username: partnerId, gender: 'unknown' });
-            
-            // Join the WebRTC call
-            await service.joinCall(callId, 'video');
-            
-            // Get local stream and set it to video element
-            const localStream = service.getLocalStream();
-            if (localStream && localVideoRef.current) {
-              localVideoRef.current.srcObject = localStream;
-            }
-          } catch (error) {
-            console.error('Failed to join call:', error);
-            setConnectionStatus('failed');
-          }
-        };
-        
-      } catch (error) {
-        console.error('Failed to initialize call:', error);
-        setConnectionStatus('failed');
-        toast({
-          title: "Initialization failed",
-          description: "Failed to start video call. Please try again.",
-          variant: "destructive"
-        });
+      } else if (isConnected) {
+        setConnectionStatus('connected');
+      } else if (isInCall) {
+        setConnectionStatus('connecting');
       }
-    };
+    }
+  }, [isSearching, isConnected, isInCall, realMatchingHook]);
 
-    initializeCall();
-
-    // Cleanup on unmount
-    return () => {
-      if (webrtcService) {
-        webrtcService.endCall();
-      }
-      callMatchingService.onMatchFound = undefined;
-    };
-  }, [userProfile, toast, onEndCall, isPremium]);
+  // Update connection status based on WebRTC state
+  useEffect(() => {
+    if (isConnected) {
+      setConnectionStatus('connected');
+      toast({
+        title: "Connected! 🎉",
+        description: "You're now connected with your match.",
+      });
+    }
+  }, [isConnected, toast]);
 
   // Call duration timer
   useEffect(() => {
@@ -300,23 +244,22 @@ export function VideoCallScreen({
   };
 
   const handleToggleAudio = () => {
-    if (webrtcService) {
-      const isEnabled = webrtcService.toggleAudio();
-      setIsMuted(!isEnabled);
-    }
+    const enabled = toggleAudio();
+    setIsMuted(!enabled);
   };
 
   const handleToggleVideo = () => {
-    if (webrtcService) {
-      const isEnabled = webrtcService.toggleVideo();
-      setIsCameraOff(!isEnabled);
-    }
+    const enabled = toggleVideo();
+    setIsCameraOff(!enabled);
   };
 
   const handleCallEnd = async () => {
-    if (webrtcService) {
-      await webrtcService.endCall();
+    if (realMatchingHook) {
+      await realMatchingHook.endMatch();
+    } else {
+      await endCall('User ended call');
     }
+    
     // Trigger interstitial ad on call end
     if ((window as any).triggerCallEndInterstitial) {
       (window as any).triggerCallEndInterstitial();

@@ -140,8 +140,8 @@ class CurrencyService {
     }
     
     if (item === 'coin_packages') {
-      const currencyPricing = (itemPricing as any)[curr as 'INR' | 'USD'];
-      return currencyPricing || (itemPricing as any).USD;
+      // Return the entire coin_packages structure, not just currency-specific data
+      return itemPricing;
     }
     
     const currencyPricing = (itemPricing as any)[curr as 'INR' | 'USD'];
@@ -158,11 +158,13 @@ class CurrencyService {
   // Get formatted pricing for UI display
   getFormattedPricing() {
     const currency = this.currentCurrency;
-    const coinPackages = this.getPricing('coin_packages', currency);
+    const coinPackages = this.getPricing('coin_packages');
     
-    // Add safety checks to prevent undefined errors
-    if (!coinPackages || !coinPackages.small || !coinPackages.medium || !coinPackages.large) {
-      console.error('Invalid coin packages data:', coinPackages);
+    // Get currency-specific packages
+    const currencyPackages = (coinPackages as any)[currency as 'INR' | 'USD'] || (coinPackages as any).USD;
+    
+    if (!currencyPackages || !currencyPackages.small || !currencyPackages.medium || !currencyPackages.large) {
+      console.error('Invalid coin packages data for currency:', currency, coinPackages);
       // Return fallback data with USD pricing
       const fallbackPackages = PRICING_CONFIG.coin_packages;
       return {
@@ -205,19 +207,19 @@ class CurrencyService {
       },
       coin_packages: {
         small: {
-          amount: coinPackages.small.amount,
-          coins: coinPackages.small.coins,
-          formatted: this.formatPrice(coinPackages.small.amount, currency)
+          amount: currencyPackages.small.amount,
+          coins: currencyPackages.small.coins,
+          formatted: this.formatPrice(currencyPackages.small.amount, currency)
         },
         medium: {
-          amount: coinPackages.medium.amount,
-          coins: coinPackages.medium.coins,
-          formatted: this.formatPrice(coinPackages.medium.amount, currency)
+          amount: currencyPackages.medium.amount,
+          coins: currencyPackages.medium.coins,
+          formatted: this.formatPrice(currencyPackages.medium.amount, currency)
         },
         large: {
-          amount: coinPackages.large.amount,
-          coins: coinPackages.large.coins,
-          formatted: this.formatPrice(coinPackages.large.amount, currency)
+          amount: currencyPackages.large.amount,
+          coins: currencyPackages.large.coins,
+          formatted: this.formatPrice(currencyPackages.large.amount, currency)
         }
       }
     };

@@ -25,11 +25,12 @@ import { useLoginStreak } from "@/hooks/useLoginStreak";
 import { useMysteryBox } from "@/hooks/useMysteryBox";
 import { useBlurredProfiles } from "@/hooks/useBlurredProfiles";
 import { useToast } from "@/hooks/use-toast";
-import { useMatching } from "@/hooks/useMatching";
+import { useRealMatching } from "@/hooks/useRealMatching";
 import { CoinsScreen } from "@/components/Coins/CoinsScreen";
 import { PremiumScreen } from "@/components/Premium/PremiumScreen";
 import { EarnCoinsScreen } from "@/components/Coins/EarnCoinsScreen";
 import { Video, Gem, Phone, Flame } from "lucide-react";
+import { useCoinBalance } from "@/hooks/useCoinBalance";
 import { Button } from "@/components/ui/button";
 import { SocialScreen } from "@/components/Social/SocialScreen";
 import { RoomsScreen } from "@/components/Rooms/RoomsScreen";
@@ -46,6 +47,7 @@ interface UserProfile {
   interests: string[];
   matchPreference: "anyone" | "men" | "women";
   gender: "male" | "female" | "other";
+  isPremium?: boolean;
 }
 
 const Index = () => {
@@ -73,7 +75,7 @@ const Index = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [appState, setAppState] = useState<"splash" | "onboarding" | "main" | "spin-wheel" | "auth">("splash");
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [currentScreen, setCurrentScreen] = useState<"home" | "call" | "voice-call" | "post-call" | "chat-detail" | "blurred-profiles" | "premium" | "earn-coins" | "social" | "room-call" | "referrals">("home");
+  const [currentScreen, setCurrentScreen] = useState<"home" | "call" | "voice-call" | "post-call" | "chat-detail" | "blurred-profiles" | "premium" | "earn-coins" | "social" | "room-call" | "referrals" | "match" | "video">("home");
   const [activeTab, setActiveTab] = useState("home");
   const [showCoinModal, setShowCoinModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -88,6 +90,7 @@ const Index = () => {
   const [coinBalance, setCoinBalance] = useState(100);
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  
   // Login streak and mystery box hooks
   const { streakData, claimReward } = useLoginStreak();
   const { profiles: blurredProfiles, unlockProfile } = useBlurredProfiles();
@@ -99,19 +102,23 @@ const Index = () => {
     closeMysteryBox 
   } = useMysteryBox();
   
-  // Matching hook
-  const matching = useMatching({
+  // Real matching hook
+  const realMatching = useRealMatching({
     userGender: userProfile?.gender || 'male',
-    userId: 'user-' + Date.now(),
     isPremium
   });
-  
   
   // Room invites hook
   useRoomInvites();
   
   // Referrals hook
   const { useReferralCode } = useReferrals();
+  
+  // Coin balance hook
+  const { balance: coinBalanceFromHook, loading: coinLoading } = useCoinBalance();
+  
+  // Use real coin balance from Supabase when available
+  const effectiveCoinBalance = !coinLoading ? coinBalanceFromHook : coinBalance;
   
   const { toast } = useToast();
   
@@ -259,20 +266,35 @@ const Index = () => {
   }, [isAuthenticated, useReferralCode]);
 
   // Event handlers
-  const handleStartMatch = () => {
+  const handleStartMatch = async () => {
     if (userProfile) {
+      
       // Show matching explanation toast
-      const explanation = matching.getMatchingExplanation();
+      const explanation = realMatching.getMatchingExplanation();
       toast({
         title: explanation.title,
         description: explanation.description,
       });
       
-      // Start the matching process
-      matching.startMatching(userProfile.matchPreference).then((result) => {
-        if (result) {
-          setCurrentScreen("call");
+      try {
+        // Go directly to video call screen instead of match screen
+        setCurrentScreen("video");
+        
+        // Start the real matching process
+        const result = await realMatching.startMatching(userProfile.matchPreference);
+        
+        if (!result?.success) {
+          // If matching fails, go back to home
+          setCurrentScreen("home");
         }
+      } catch (error) {
+        setCurrentScreen("home");
+      }
+    } else {
+      toast({
+        title: "Profile Required",
+        description: "Please complete your profile to start matching.",
+        variant: "destructive"
       });
     }
   };
@@ -280,14 +302,14 @@ const Index = () => {
   const handleStartVoiceCall = () => {
     if (userProfile) {
       // Show matching explanation toast
-      const explanation = matching.getMatchingExplanation();
+      const explanation = realMatching.getMatchingExplanation();
       toast({
         title: explanation.title + " (Voice)",
         description: explanation.description,
       });
       
-      // Start the matching process
-      matching.startMatching(userProfile.matchPreference).then((result) => {
+      // Start the real matching process
+      realMatching.startMatching(userProfile.matchPreference).then((result) => {
         if (result) {
           setCurrentScreen("voice-call");
         }
@@ -460,10 +482,11 @@ const Index = () => {
 
       {appState === "main" && (
         <>
-          {currentScreen === "call" && (
+          {(currentScreen === "call" || currentScreen === "video") && (
             <VideoCallScreen
               onEndCall={() => {
                 setCurrentScreen("post-call");
+                realMatching.endMatch();
                 // Trigger mystery box chance after ending call
                 setTimeout(() => {
                   triggerMysteryBox();
@@ -487,15 +510,41 @@ const Index = () => {
                   description: "You won't be matched with this user again.",
                 });
               }}
-              coinBalance={coinBalance}
+              onBack={() => {
+                setCurrentScreen("home");
+                realMatching.cancelMatching();
+              }}
+              coinBalance={effectiveCoinBalance}
               onSpendCoins={(amount) => {
                 setCoinBalance(prev => Math.max(0, prev - amount));
               }}
               userProfile={userProfile ? {
                 ...userProfile,
-                userId: 'user-' + Date.now()
+                userId: user?.id || `anonymous-${Date.now()}`
               } : undefined}
               isPremium={isPremium}
+              realMatchingHook={realMatching}
+            />
+          )}
+
+          {currentScreen === "match" && userProfile && (
+            <MatchScreen
+              onStartMatch={() => {
+                // From Match screen, also go directly to video call
+                setCurrentScreen("video");
+                realMatching.startMatching(userProfile.matchPreference);
+              }}
+              isPremium={isPremium}
+              matchPreference={userProfile.matchPreference}
+              onChangePreference={(pref) => {
+                setUserProfile({...userProfile, matchPreference: pref});
+              }}
+              onRequestUpgrade={() => setCurrentScreen("premium")}
+              onBuyCoins={handleBuyCoins}
+              onBack={() => {
+                setCurrentScreen("home");
+                realMatching.cancelMatching();
+              }}
             />
           )}
 
@@ -526,7 +575,7 @@ const Index = () => {
                   description: "You won't be matched with this user again.",
                 });
               }}
-              coinBalance={coinBalance}
+              coinBalance={effectiveCoinBalance}
               onSpendCoins={(amount) => {
                 setCoinBalance(prev => Math.max(0, prev - amount));
               }}
@@ -654,7 +703,7 @@ const Index = () => {
           {currentScreen === "blurred-profiles" && (
             <BlurredProfilesScreen
               profiles={blurredProfiles}
-              coinBalance={coinBalance}
+              coinBalance={effectiveCoinBalance}
               onBack={() => {
                 setCurrentScreen("home");
                 setActiveTab("profile");
@@ -716,12 +765,17 @@ const Index = () => {
                     hasUnlimitedCalls={hasUnlimitedCalls}
                     onRequestUpgrade={() => setShowPremiumModal(true)}
                     onOpenReferrals={() => setCurrentScreen("referrals")}
+                    coinBalance={effectiveCoinBalance}
                   />
                 )}
                 
                 {activeTab === "match" && userProfile && (
                   <MatchScreen
-                    onStartMatch={handleStartMatch}
+                    onStartMatch={() => {
+                      // From Match tab, also go directly to video call
+                      setCurrentScreen("video");
+                      realMatching.startMatching(userProfile.matchPreference);
+                    }}
                     isPremium={isPremium}
                     matchPreference={userProfile.matchPreference}
                     onChangePreference={(pref) => {
@@ -729,6 +783,7 @@ const Index = () => {
                     }}
                     onRequestUpgrade={() => setCurrentScreen("premium")}
                     onBuyCoins={handleBuyCoins}
+                    onBack={() => setActiveTab("home")}
                   />
                 )}
                 
@@ -737,12 +792,13 @@ const Index = () => {
                     onStartCall={handleStartVoiceCall}
                     isPremium={isPremium}
                     hasUnlimitedCalls={hasUnlimitedCalls}
-                    coinBalance={coinBalance}
+                    coinBalance={effectiveCoinBalance}
                     matchPreference={userProfile.matchPreference}
                     onChangePreference={(pref) => {
                       setUserProfile({...userProfile, matchPreference: pref});
                     }}
                     onRequestUpgrade={() => setCurrentScreen("premium")}
+                    onBack={() => setActiveTab("home")}
                     onBuyCoins={handleBuyCoins}
                     onSpendCoins={handleSpendCoins}
                   />
@@ -750,7 +806,7 @@ const Index = () => {
                 
                 {activeTab === "coins" && (
                   <CoinsScreen
-                    coinBalance={coinBalance}
+                    coinBalance={effectiveCoinBalance}
                     streakData={streakData}
                     hasUnlimitedCalls={hasUnlimitedCalls}
                     unlimitedCallsExpiry={unlimitedCallsExpiry}

@@ -102,13 +102,11 @@ serve(async (req) => {
     
     switch (product_type) {
       case 'coins':
-        // Add coins to user profile
-        const { error: coinsError } = await supabase
-          .from('profiles')
-          .update({ 
-            coins: supabase.sql`coins + ${product_details.coins}`
-          })
-          .eq('user_id', user.id);
+        // Add coins using the increment function
+        const { error: coinsError } = await supabase.rpc('increment_user_coins', {
+          user_id: user.id,
+          amount: product_details.coins
+        });
         
         if (coinsError) {
           console.error('Coins update error:', coinsError);
@@ -117,27 +115,33 @@ serve(async (req) => {
         break;
 
       case 'premium':
-        // Update user to premium
+        // Add premium subscription
         const { error: premiumError } = await supabase
-          .from('profiles')
-          .update({ is_premium: true })
-          .eq('user_id', user.id);
+          .from('premium_subscriptions')
+          .insert({
+            user_id: user.id,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+            granted_by: 'purchase'
+          });
         
         if (premiumError) {
-          console.error('Premium update error:', premiumError);
+          console.error('Premium subscription error:', premiumError);
           throw new Error('Failed to activate premium');
         }
         break;
 
       case 'unlimited_calls':
-        // For now, just mark as premium (can be extended later)
+        // Add unlimited calls subscription (24 hours)
         const { error: unlimitedError } = await supabase
-          .from('profiles')
-          .update({ is_premium: true })
-          .eq('user_id', user.id);
+          .from('premium_subscriptions')
+          .insert({
+            user_id: user.id,
+            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+            granted_by: 'unlimited_calls_purchase'
+          });
         
         if (unlimitedError) {
-          console.error('Unlimited calls update error:', unlimitedError);
+          console.error('Unlimited calls subscription error:', unlimitedError);
           throw new Error('Failed to activate unlimited calls');
         }
         break;

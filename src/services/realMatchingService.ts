@@ -36,9 +36,12 @@ export class RealMatchingService {
     isPremium: boolean,
     callType: 'video' | 'voice'
   ): Promise<string> {
-    console.log('Starting real matching for user:', userId);
+    console.log('🎯 realMatchingService.startMatching called with:', {
+      userId, userGender, preferredGender, isPremium, callType
+    });
 
     // First, try to find an existing compatible request
+    console.log('🔍 Looking for existing compatible requests...');
     const compatibleRequest = await this.findCompatibleRequest(
       userGender,
       preferredGender,
@@ -47,9 +50,11 @@ export class RealMatchingService {
     );
 
     if (compatibleRequest) {
+      console.log('🎉 Found compatible request:', compatibleRequest);
       // Found a match! Create call session and update both requests
       return await this.createMatch(userId, compatibleRequest);
     } else {
+      console.log('⭕ No compatible requests found, creating new matching request...');
       // No match found, create new matching request
       return await this.createMatchingRequest(
         userId,
@@ -68,6 +73,9 @@ export class RealMatchingService {
     isPremium: boolean,
     callType: 'video' | 'voice'
   ): Promise<MatchingRequest | null> {
+    console.log('🔍 [realMatchingService] findCompatibleRequest called with:', {
+      userGender, preferredGender, isPremium, callType
+    });
     // Build gender filter for potential matches
     let genderFilter = '';
     if (preferredGender === 'men') {
@@ -127,9 +135,10 @@ export class RealMatchingService {
     userId: string,
     compatibleRequest: MatchingRequest
   ): Promise<string> {
-    console.log('Creating match between users:', userId, compatibleRequest.user_id);
+    console.log('🤝 Creating match between users:', userId, 'and', compatibleRequest.user_id);
 
     // Create call session
+    console.log('📞 Creating call session...');
     const { data: callSession, error: callError } = await supabase
       .from('call_sessions')
       .insert({
@@ -142,11 +151,14 @@ export class RealMatchingService {
       .single();
 
     if (callError) {
-      console.error('Error creating call session:', callError);
+      console.error('❌ Error creating call session:', callError);
       throw new Error(`Failed to create call session: ${callError.message}`);
     }
 
+    console.log('✅ Call session created:', callSession);
+
     // Update both matching requests
+    console.log('📝 Updating matching request statuses...');
     const { error: updateError } = await supabase
       .from('user_matching')
       .update({

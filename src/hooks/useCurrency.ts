@@ -38,7 +38,21 @@ export function useCurrency() {
   };
 
   const getFormattedPricing = () => {
-    return currencyService.getFormattedPricing();
+    try {
+      return currencyService.getFormattedPricing();
+    } catch (error) {
+      console.error('Error getting formatted pricing:', error);
+      // Return fallback pricing to prevent crashes
+      return {
+        voice_call: { formatted: '10 coins', amount: 10 },
+        premium_monthly: { formatted: '$9.99', amount: 9.99 },
+        coin_packages: {
+          small: { formatted: '$0.99', amount: 0.99, coins: 100 },
+          medium: { formatted: '$4.99', amount: 4.99, coins: 500 },
+          large: { formatted: '$9.99', amount: 9.99, coins: 1000 }
+        }
+      };
+    }
   };
 
   const changeCurrency = (newCurrency: string) => {

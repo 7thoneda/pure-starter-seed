@@ -17,6 +17,7 @@ interface HomeScreenProps {
   hasUnlimitedCalls?: boolean;
   onRequestUpgrade: () => void;
   onOpenReferrals?: () => void;
+  coinBalance: number;
 }
 
 export default function HomeScreen({
@@ -29,6 +30,7 @@ export default function HomeScreen({
   hasUnlimitedCalls = false,
   onRequestUpgrade,
   onOpenReferrals,
+  coinBalance,
 }: HomeScreenProps) {
   const { t } = useTranslation();
   const [liveUserCount] = useState(1247832);
@@ -49,8 +51,8 @@ export default function HomeScreen({
         onClick={() => (locked ? onRequestUpgrade() : onChangePreference(value))}
         className={`relative flex-1 h-16 rounded-2xl border-2 transition-all duration-300 overflow-hidden group ${
           isActive 
-            ? "bg-white text-gray-800 border-gray-200 shadow-lg scale-105 shadow-gray-200/50" 
-            : "bg-white/60 text-gray-600 border-gray-100 hover:bg-white hover:shadow-md"
+            ? "bg-primary text-primary-foreground border-primary shadow-lg scale-105" 
+            : "bg-card text-muted-foreground border-border hover:bg-muted hover:shadow-md"
         } ${locked ? "opacity-60" : ""} hover:scale-[1.02] active:scale-[0.98]`}
         aria-disabled={locked}
       >
@@ -59,11 +61,8 @@ export default function HomeScreen({
           <span className="text-xs font-semibold">{label}</span>
           {locked && (
             <div className="absolute top-2 right-2">
-              <Crown className="w-4 h-4 text-amber-500" />
+              <Crown className="w-4 h-4 text-primary" />
             </div>
-          )}
-          {isActive && (
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 to-purple-50/50 rounded-2xl" />
           )}
         </div>
       </button>
@@ -71,50 +70,58 @@ export default function HomeScreen({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 pb-20 safe-area-top">
+    <div className="min-h-screen bg-background pb-20 safe-area-top">
       {/* Header */}
-      <div className="pt-12 pb-6 px-6 text-center bg-white/95 backdrop-blur-sm shadow-lg relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 to-purple-50/50" />
-        
+      <div className="pt-12 pb-6 px-6 bg-background relative">
+        {/* Language selector button at top center */}
         <button
           onClick={() => setShowLanguageSelector(true)}
-          className="absolute top-4 right-4 p-3 text-gray-600 hover:text-gray-800 hover:bg-white/50 rounded-full transition-all duration-300 hover:scale-105 z-10"
+          className="absolute top-4 left-1/2 transform -translate-x-1/2 p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-all duration-300 hover:scale-105 z-10"
         >
-          <Globe className="w-5 h-5" />
+          <Globe className="w-4 h-4" />
         </button>
         
-        <div className="relative">
-          <div className="w-20 h-20 bg-gradient-to-r from-red-500 via-pink-500 to-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl animate-gentle-bounce">
-            <Video className="w-9 h-9 text-white" />
+        {/* Header content with app name centered and balance on right */}
+        <div className="flex items-start justify-between relative z-10 mt-6">
+          {/* Center - App name and tagline */}
+          <div className="flex-1 text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-1 font-dancing">{t('app.name')}</h1>
+            <p className="text-muted-foreground text-sm font-medium font-poppins">{t('app.tagline')}</p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2 font-dancing">{t('app.name')}</h1>
-          <p className="text-gray-600 text-base font-medium font-poppins">{t('app.tagline')}</p>
           
-          {/* Live stats */}
-          <div className="flex items-center justify-center gap-6 mt-6 text-sm text-gray-600">
+          {/* Right side - Balance display */}
+          <div className="bg-primary rounded-xl px-3 py-2 shadow-sm">
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 bg-purple-500 rounded-full animate-pulse shadow-sm" />
-              <span className="font-medium">{liveUserCount.toLocaleString()} {t('home.online')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4" />
-              <span className="font-medium">190+ {t('home.countries')}</span>
+              <div className="p-1 bg-primary-foreground/20 rounded-full">
+                <Gem className="w-3 h-3 text-primary-foreground" />
+              </div>
+              <div className="text-center">
+                <p className="text-primary-foreground/80 text-xs font-poppins font-medium">Your Balance</p>
+                <p className="text-primary-foreground text-sm font-bold font-poppins">{coinBalance}</p>
+              </div>
+              <Button 
+                size="sm"
+                onClick={onBuyCoins}
+                className="bg-primary-foreground text-primary font-poppins font-semibold h-6 px-2 rounded-lg border-0 shadow-none text-xs ml-1 hover:bg-primary-foreground/90"
+              >
+                Buy
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="px-4 space-y-3 max-w-md mx-auto -mt-6">
-        {/* Main matching card */}
-        <Card className="rounded-3xl border-0 shadow-card bg-card/95 backdrop-blur-sm overflow-hidden animate-fade-in">
+      <div className="px-4 space-y-3 max-w-md mx-auto pt-6">
+        {/* Main matching card - focused design */}
+        <Card className="rounded-3xl border-0 shadow-sm bg-card backdrop-blur-sm overflow-hidden animate-fade-in">
           <CardContent className="p-0">
             {/* Preference selection */}
             <div className="p-6 pb-4">
             <div className="flex items-center gap-3 mb-5">
-              <div className="p-2 bg-purple-100 rounded-xl">
-                <Filter className="w-4 h-4 text-purple-600" />
+              <div className="p-2 bg-primary/10 rounded-xl">
+                <Filter className="w-4 h-4 text-primary" />
               </div>
-              <span className="text-sm font-semibold text-gray-800">{t('home.whoToMeet')}</span>
+              <span className="text-sm font-semibold text-foreground">{t('home.whoToMeet')}</span>
             </div>
               
               <div className="flex gap-3">
@@ -124,10 +131,10 @@ export default function HomeScreen({
               </div>
               
               {!isPremium && (
-                <div className="mt-5 p-4 bg-accent/10 border border-accent/20 rounded-2xl backdrop-blur-sm">
+                <div className="mt-5 p-4 bg-primary/5 border border-primary/20 rounded-2xl backdrop-blur-sm">
                   <div className="flex items-center gap-3">
-                    <Crown className="w-4 h-4 text-accent" />
-                    <span className="text-xs text-accent-foreground font-semibold">{t('premium.upgradeToChoose')}</span>
+                    <Crown className="w-4 h-4 text-primary" />
+                    <span className="text-xs text-foreground font-semibold">{t('premium.upgradeToChoose')}</span>
                   </div>
                 </div>
               )}
@@ -136,12 +143,13 @@ export default function HomeScreen({
             {/* Main action button */}
             <div className="p-6 pt-2">
             <Button 
-              onClick={onStartMatch}
-              className="w-full h-16 rounded-3xl bg-gradient-to-r from-red-500 via-pink-500 to-orange-500 hover:from-red-600 hover:via-pink-600 hover:to-orange-600 text-white hover:scale-[1.02] active:scale-[0.98] border-0 shadow-2xl hover:shadow-red-500/25 transition-all duration-300 text-lg font-bold relative overflow-hidden group"
+              onClick={() => {
+                onStartMatch();
+              }}
+              className="w-full h-16 rounded-3xl bg-primary hover:bg-primary/90 text-primary-foreground hover:scale-[1.02] active:scale-[0.98] border-0 shadow-lg hover:shadow-xl transition-all duration-300 text-lg font-bold relative overflow-hidden group"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-red-400 via-pink-400 to-orange-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="flex items-center gap-4 relative z-10">
-                <div className="p-2 bg-white/20 rounded-xl">
+                <div className="p-2 bg-primary-foreground/20 rounded-xl">
                   <Video className="w-6 h-6" />
                 </div>
                 <div className="text-left">
@@ -155,15 +163,14 @@ export default function HomeScreen({
         </Card>
 
         {/* Voice chat option */}
-        <Card className="rounded-3xl border-0 shadow-lg bg-white/95 backdrop-blur-sm animate-fade-in">
+        <Card className="rounded-3xl border-0 shadow-sm bg-card backdrop-blur-sm animate-fade-in">
           <CardContent className="p-5">
             <Button
               onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-voice'))}
-              className="w-full h-14 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white hover:scale-[1.02] active:scale-[0.98] border-0 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group"
+              className="w-full h-14 rounded-2xl bg-secondary hover:bg-secondary/90 text-secondary-foreground hover:scale-[1.02] active:scale-[0.98] border-0 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
               <div className="flex items-center gap-4 relative z-10">
-                <div className="p-2 bg-white/20 rounded-xl">
+                <div className="p-2 bg-secondary-foreground/20 rounded-xl">
                   <Phone className="w-5 h-5" />
                 </div>
                 <div className="text-left">
@@ -187,45 +194,22 @@ export default function HomeScreen({
           </CardContent>
         </Card>
 
-        {/* Referrals card */}
-        {onOpenReferrals && (
-          <Card className="rounded-3xl border-0 shadow-lg bg-white/95 backdrop-blur-sm animate-fade-in">
-            <CardContent className="p-5">
-              <Button
-                onClick={onOpenReferrals}
-                className="w-full h-14 rounded-2xl bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white hover:scale-[1.02] active:scale-[0.98] border-0 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                <div className="flex items-center gap-4 relative z-10">
-                  <div className="p-2 bg-white/20 rounded-xl">
-                    <Gift className="w-5 h-5" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-bold">Invite Friends</div>
-                    <div className="text-xs opacity-90 font-medium">Earn 24h Premium for each referral</div>
-                  </div>
-                </div>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Stats card */}
-        <Card className="rounded-3xl border-0 shadow-lg bg-white/95 backdrop-blur-sm animate-fade-in">
+        <Card className="rounded-3xl border-0 shadow-sm bg-card backdrop-blur-sm animate-fade-in">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <div className="text-3xl font-bold text-gray-800 font-poppins">{liveUserCount.toLocaleString()}</div>
-                <div className="text-sm text-gray-600 font-medium">{t('home.peopleOnline')}</div>
+                <div className="text-3xl font-bold text-foreground font-poppins">{liveUserCount.toLocaleString()}</div>
+                <div className="text-sm text-muted-foreground font-medium">{t('home.peopleOnline')}</div>
               </div>
               <div className="text-right space-y-1">
                 <div className="flex items-center gap-2 justify-end">
-                  <div className="p-1.5 bg-purple-100 rounded-lg">
-                    <Star className="w-4 h-4 fill-purple-500 text-purple-500" />
+                  <div className="p-1.5 bg-primary/10 rounded-lg">
+                    <Star className="w-4 h-4 fill-primary text-primary" />
                   </div>
-                  <span className="text-lg font-bold text-gray-800">4.8</span>
+                  <span className="text-lg font-bold text-foreground">4.8</span>
                 </div>
-                <div className="text-xs text-gray-600 font-medium">{t('home.appRating')}</div>
+                <div className="text-xs text-muted-foreground font-medium">{t('home.appRating')}</div>
               </div>
             </div>
           </CardContent>
@@ -233,11 +217,10 @@ export default function HomeScreen({
 
         {/* Premium upgrade for non-premium users */}
         {!isPremium && (
-          <Card className="rounded-3xl border-0 shadow-card bg-gradient-premium text-primary-foreground overflow-hidden relative animate-fade-in">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10" />
+          <Card className="rounded-3xl border-0 shadow-sm bg-primary text-primary-foreground overflow-hidden relative animate-fade-in">
             <CardContent className="p-6 text-center relative z-10">
-              <div className="p-3 bg-white/20 rounded-2xl w-fit mx-auto mb-4 animate-gentle-bounce">
-                <Crown className="w-10 h-10 text-primary-foreground" />
+              <div className="p-3 bg-primary-foreground/20 rounded-2xl w-fit mx-auto mb-4">
+                <Crown className="w-8 h-8 text-primary-foreground" />
               </div>
               <h3 className="text-xl font-bold mb-3 font-poppins">{t('premium.title')}</h3>
               <p className="text-primary-foreground/90 text-sm mb-6 font-medium leading-relaxed">
@@ -246,25 +229,37 @@ export default function HomeScreen({
               
               <div className="flex justify-center gap-6 mb-6 text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-white/20 rounded-lg">
+                  <div className="p-1.5 bg-primary-foreground/20 rounded-lg">
                     <Filter className="w-3 h-3" />
                   </div>
                   <span className="font-medium">Gender filters</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-white/20 rounded-lg">
+                  <div className="p-1.5 bg-primary-foreground/20 rounded-lg">
                     <Users className="w-3 h-3" />
                   </div>
                   <span className="font-medium">Priority queue</span>
                 </div>
               </div>
               
-              <Button 
-                onClick={onUpgradePremium}
-                className="bg-card text-primary font-bold rounded-2xl px-8 py-3 hover:bg-card/90 hover:scale-105 active:scale-95 transition-all duration-300 shadow-lg hover:shadow-xl"
-              >
-                {t('premium.upgradeNow')}
-              </Button>
+              <div className="space-y-3">
+                <Button 
+                  onClick={onUpgradePremium}
+                  className="w-full bg-primary-foreground text-primary font-bold rounded-2xl px-8 py-3 hover:bg-primary-foreground/90 hover:scale-105 active:scale-95 transition-all duration-300 shadow-lg hover:shadow-xl"
+                >
+                  {t('premium.upgradeNow')}
+                </Button>
+                
+                {onOpenReferrals && (
+                  <Button 
+                    onClick={onOpenReferrals}
+                    className="w-full bg-primary-foreground/10 text-primary-foreground font-bold rounded-2xl px-8 py-2.5 hover:bg-primary-foreground/20 hover:scale-105 active:scale-95 transition-all duration-300 border border-primary-foreground/20"
+                  >
+                    <Gift className="w-4 h-4 mr-2" />
+                    Invite Friends for Premium
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}
